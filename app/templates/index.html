@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Movie Recommendation System</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
     <h1>Movie Recommendation System</h1>
     <form action="/suggest" method="POST">
@@ -11,13 +13,21 @@
         <input type="text" name="userId" id="userId" required>
         <button type="submit">Get Movie Suggestions</button>
     </form>
-    {% if suggestions %}
-        <h2>Suggested Movies:</h2>
-        <ul>
-            {% for movie in suggestions.iterrows() %}
-                <li>{{ movie[1]['title'] }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+    <h2>Suggested Movies:</h2>
+    <table>
+        <tr>
+            <th>MovieID</th>
+            <th>Title</th>
+            <th>Genres</th>
+        </tr>
+        {% for movie in suggestions %}
+        <tr>
+            <td>{{ movie['MovieID'] }}</td>
+            <td>{{ movie['Title'] }}</td>
+            <td>{{ movie['Genres'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
+
 </html>
