@@ -15,13 +15,6 @@
 </head>
 
 <body>
-
-    <h1>Movie Recommendation System</h1>
-    <form action="/suggest" method="POST">
-        <label for="userId">User ID:</label>
-        <input type="text" name="userId" id="userId" required>
-        <button type="submit">Get Movie Suggestions</button>
-    </form>
     <div class="tongquat">
         <header class="header">
             <div class="container header__inner">
@@ -36,8 +29,8 @@
                             </a>
                         </li>
                         <li class="header__menu-item">
-                            <a href="/suggest" class="header__menu-link">
-                                Phim gợi ý
+                            <a href="phimchieurap.html" class="header__menu-link">
+                                Phim Chiếu Rạp
                             </a>
                         </li>
                         <li class="header__menu-item">
@@ -70,30 +63,43 @@
                 </nav>
             </div>
         </header>
-        <section class="subscribe">
-            <div class="container">
-                <br>
-                <pre class="title">Danh sách gợi ý</pre>
-            </div>
-        </section>
         <section class="category">
             <div class="container">
                 <ul class="category__list">
-                    {% for movie in suggestions %}
                     <li class="category__item">
-                        <!-- <img src="./images/bautroirucdo.jpg" alt="" />
-                        <h3>Bầu Trời Rực Đỏ</h3>
+                        <img src="./images/nowayhome.jpg" alt="" />
+                        <h3>Spider Man 3</h3>
+                        <a href="reviewphim.html">
+                            Xem Ngay <i class="fa fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="category__item">
+                        <img src="./images/endgame.jpg" alt="" />
+                        <h3>Avenger:Endgame</h3>
                         <a href="#">
                             Xem Ngay <i class="fa fa-angle-right"></i>
-                        </a> -->
-                        <h3>{{ movie['MovieID'] }}</h3>
-                        <h3>{{ movie['Title'] }}</h3>
-                        <h3>{{ movie['Genres'] }}</h3>
+                        </a>
                     </li>
-                    {% endfor %}
+                    <li class="category__item">
+                        <img src="./images/eternals.jpg" alt="" />
+                        <h3>Eternals</h3>
+                        <a href="#">
+                            Xem Ngay <i class="fa fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="category__item">
+                        <img src="./images/dune.jpg" alt="" />
+                        <h3>DUNE</h3>
+                        <a href="#">
+                            Xem Ngay <i class="fa fa-angle-right"></i>
+                        </a>
+                    </li>
                 </ul>
             </div>
         </section>
+
+
+ 
         <button onclick="topFunction()" id="myBtn" title="Go to top"></button>
         <script>
             window.onscroll = function () {
@@ -113,6 +119,11 @@
                 document.documentElement.scrollTop = 0;
             }
         </script>
+        <section class="partner">
+            <div class="container partner__container">
+                <h2 class="partner__title">Đối Tác Của Chúng Tôi</h2>
+            </div>
+        </section>
 
         <footer class="footer">
             <div class="container footer__container">
