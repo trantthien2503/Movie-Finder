@@ -54,12 +54,16 @@ def get_movie_suggestions(userId, num_suggestions=10):
 # GET
 @app.route('/api/dataget', methods=['GET'])
 def get_data():
+
     data = {'message': 'Hello, World!'}
     return jsonify(data)
 
 @app.route('/api/suggest', methods=['GET'])
 def suggest():
-    return jsonify(get_movie_suggestions(1))    
+    response = jsonify(get_movie_suggestions(1))
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:4200')
+
+    return response 
 
 # Post
 @app.route('/api/datapost', methods=['POST'])
