@@ -25,14 +25,11 @@ ratings_df = pd.read_csv(ratings_file_path, sep='::', engine='python', names=['U
 # Xây dựng đường dẫn tới file ratings.dat
 user_file_path = os.path.join(current_dir, 'data', 'users.dat')
 
-# Đọc file ratings.dat
-users_df = pd.read_csv(user_file_path, sep='::', engine='python', names=['UserID','Gender','Age','Occupation','Zip-code'], encoding='ISO-8859-1')
+# Đọc file users.dat
+users_df = pd.read_csv(user_file_path, sep='::', engine='python', names=['UserID','Gender','Age','Occupation','Zip-code','Username','Password'], encoding='ISO-8859-1')
 
 
-
-
-
-# Tạo pivot table từ ratings_df
+# Tạo pivot table từ users
 pivot_table = ratings_df.pivot(
     index='UserID', columns='MovieID', values='Rating').fillna(0)
 
@@ -65,43 +62,13 @@ def get_movie_suggestions(userId, num_suggestions=10):
 
 
 
-def save_user_data_to_file(data):
-    with open('users.dat', 'w') as file:
-        json.dump(data, file)
-
-
-
-def generate_random_string(length):
-    letters = string.ascii_letters
-    return ''.join(random.choice(letters) for _ in range(length))
-
-
-def update_user_data_format():
-    users = users_df.to_dict('records')
-    updated_users = []
-
-    for user in users:
-        user_id = int(user['UserID'])
-        gender = user['Gender']
-        age = int(user['Age'])
-        occupation = int(user['Occupation'])
-        zip_code = user['Zip-code']
-        username = generate_random_string(8)
-        password = generate_random_string(10)
-        updated_user = f"{user_id}::{gender}::{age}::{occupation}::{zip_code}::{username}::{password}\n"
-        updated_users.append(updated_user)
-        print("Đang chạy trong này")
-
-    print("Danh sách cập nhật", updated_users)   
-    save_user_data_to_file(updated_users)
 
 # GET
 # Hàm thực hiện lấy danh sách phim
 
 @app.route('/', methods=['GET'])
 def init():
-    update_user_data_format()
-    return jsonify({'message': 'Updating'})
+     return jsonify({'message': 'Welcome to my prooject'})
 
 
 @app.route('/api/get-moives', methods=['GET'])
