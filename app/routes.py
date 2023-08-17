@@ -1,13 +1,23 @@
 from app import app
-from flask import Flask, render_template, request
+from flask import Flask, jsonify
 import pandas as pd
+import os
 from sklearn.metrics.pairwise import cosine_similarity
+# Lấy đường dẫn tới thư mục chứa file hiện tại
 
-# Load dữ liệu từ file .dat
-movies_df = pd.read_csv('C:\\Users\\THIETKE\\Desktop\\dev\\Movie-Finder\\app\\data\\movies.dat',
-                        sep='::', engine='python', names=['MovieID', 'Title', 'Genres'], encoding='ISO-8859-1')
-ratings_df = pd.read_csv('C:\\Users\\THIETKE\\Desktop\\dev\\Movie-Finder\\app\\data\\ratings.dat',
-                         sep='::', engine='python', names=['UserID', 'MovieID', 'Rating', 'Timestamp'], encoding='ISO-8859-1')
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Xây dựng đường dẫn tới file movies.dat
+movies_file_path = os.path.join(current_dir, 'data', 'movies.dat')
+
+# Đọc file movies.dat
+movies_df = pd.read_csv(movies_file_path, sep='::', engine='python', names=['MovieID', 'Title', 'Genres'], encoding='ISO-8859-1')
+
+# Xây dựng đường dẫn tới file ratings.dat
+ratings_file_path = os.path.join(current_dir, 'data', 'ratings.dat')
+
+# Đọc file ratings.dat
+ratings_df = pd.read_csv(ratings_file_path, sep='::', engine='python', names=['UserID', 'MovieID', 'Rating', 'Timestamp'], encoding='ISO-8859-1')
 
 # Tạo pivot table từ ratings_df
 pivot_table = ratings_df.pivot(
@@ -41,34 +51,37 @@ def get_movie_suggestions(userId, num_suggestions=10):
     return movies_df[movies_df['MovieID'].isin(suggested_movies)].to_dict('records')
 
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# GET
+@app.route('/api/dataget', methods=['GET'])
+def get_data():
+    data = {'message': 'Hello, World!'}
+    return jsonify(data)
 
-# Route cho gợi ý phim
-
-
-@app.route('/suggest', methods=['POST'])
+@app.route('/api/suggest', methods=['GET'])
 def suggest():
-    userId = int(request.form['userId'])
-    suggestions = get_movie_suggestions(userId)
-    if suggestions:
-        # Xử lý khi danh sách phim gợi ý không rỗng
-        return render_template('index.html', suggestions=suggestions)
-    else:
-        return render_template('index.html')
+    return jsonify(get_movie_suggestions(1))    
 
+# Post
+@app.route('/api/datapost', methods=['POST'])
+def create_data():
+    # Lấy dữ liệu từ yêu cầu và tạo một tài nguyên mới
+    data = request.get_json()
+    # Lưu dữ liệu vào cơ sở dữ liệu hoặc xử lý theo nhu cầu
+    # ...
+    return jsonify({'message': 'POST request successful'})
 
-@app.route('/about')
-def about():
-    return "Giới thiệu"
+# Put
+@app.route('/api/dataput/<id>', methods=['PUT'])
+def update_data(id):
+    # Lấy dữ liệu từ yêu cầu và cập nhật tài nguyên có id tương ứng
+    data = request.get_json()
+    # Tìm và cập nhật tài nguyên có id trong cơ sở dữ liệu hoặc xử lý theo nhu cầu
+    # ...
+    return jsonify({'message': 'PUT request successful'})
 
-
-@app.route('/search')
-def search():
-    return "Tìm kiếm"
-
-
-@app.route('/html')
-def html():
-    return "HTML"
+# Delete
+@app.route('/api/datadelete/<id>', methods=['DELETE'])
+def delete_data(id):
+    # Xóa tài nguyên có id tương ứng trong cơ sở dữ liệu hoặc xử lý theo nhu cầu
+    # ...
+    return jsonify({'message': 'DELETE request successful'})
