@@ -20,7 +20,7 @@ USERS FILE DESCRIPTION
 User information is in the file "users.dat" and is in the following
 format:
 
-UserID::Gender::Age::Occupation::Zip-code
+UserID::Gender::Age::Occupation::Zip-code::Username::Password
 
 All demographic information is provided voluntarily by the users and is
 not checked for accuracy.  Only users who have provided some demographic
