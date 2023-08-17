@@ -2,6 +2,7 @@ from app import app
 from flask import Flask, jsonify
 import pandas as pd
 import os
+import json
 from sklearn.metrics.pairwise import cosine_similarity
 # Lấy đường dẫn tới thư mục chứa file hiện tại
 
@@ -52,18 +53,34 @@ def get_movie_suggestions(userId, num_suggestions=10):
 
 
 # GET
-@app.route('/api/dataget', methods=['GET'])
-def get_data():
+# Hàm thực hiện lấy danh sách phim
+@app.route('/api/get-moives', methods=['GET'])
+def get_movies():
+    # Chuyển đổi DataFrame thành định dạng JSON
+    movies_json = movies_df.to_json(orient='records')
+    response = jsonify(movies_json)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
-    data = {'message': 'Hello, World!'}
-    return jsonify(data)
-
+# Hàm thực hiện trả về danh sách gợi ý theo UserID
 @app.route('/api/suggest', methods=['GET'])
 def suggest():
     response = jsonify(get_movie_suggestions(1))
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:4200')
-
+    response.headers.add('Access-Control-Allow-Origin', '*')
     return response 
+
+
+# Hàm thực hiện lấy danh sách phim theo userId
+@app.route('/api/get-movies-byuserid/<int:userId>', methods=['GET'])
+def get_moives_byUserId(userId):
+   # Lấy danh sách phim theo userId
+    suggested_movies = get_movie_suggestions(userId)
+    # Chuyển đổi danh sách phim thành định dạng JSON
+    movies_json = json.dumps(suggested_movies)
+    # Tạo response với dữ liệu JSON
+    response = jsonify(movies_json)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 # Post
 @app.route('/api/datapost', methods=['POST'])
@@ -75,13 +92,7 @@ def create_data():
     return jsonify({'message': 'POST request successful'})
 
 # Put
-@app.route('/api/dataput/<id>', methods=['PUT'])
-def update_data(id):
-    # Lấy dữ liệu từ yêu cầu và cập nhật tài nguyên có id tương ứng
-    data = request.get_json()
-    # Tìm và cập nhật tài nguyên có id trong cơ sở dữ liệu hoặc xử lý theo nhu cầu
-    # ...
-    return jsonify({'message': 'PUT request successful'})
+
 
 # Delete
 @app.route('/api/datadelete/<id>', methods=['DELETE'])
