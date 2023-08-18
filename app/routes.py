@@ -14,19 +14,22 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 movies_file_path = os.path.join(current_dir, 'data', 'movies.dat')
 
 # Đọc file movies.dat
-movies_df = pd.read_csv(movies_file_path, sep='::', engine='python', names=['MovieID', 'Title', 'Genres'], encoding='ISO-8859-1')
+movies_df = pd.read_csv(movies_file_path, sep='::', engine='python', names=[
+                        'MovieID', 'Title', 'Genres'], encoding='ISO-8859-1')
 
 # Xây dựng đường dẫn tới file ratings.dat
 ratings_file_path = os.path.join(current_dir, 'data', 'ratings.dat')
 
 # Đọc file ratings.dat
-ratings_df = pd.read_csv(ratings_file_path, sep='::', engine='python', names=['UserID', 'MovieID', 'Rating', 'Timestamp'], encoding='ISO-8859-1')
+ratings_df = pd.read_csv(ratings_file_path, sep='::', engine='python', names=[
+                         'UserID', 'MovieID', 'Rating', 'Timestamp'], encoding='ISO-8859-1')
 
 # Xây dựng đường dẫn tới file ratings.dat
 user_file_path = os.path.join(current_dir, 'data', 'users.dat')
 
 # Đọc file users.dat
-users_df = pd.read_csv(user_file_path, sep='::', engine='python', names=['UserID','Gender','Age','Occupation','Zip-code','Username','Password'], encoding='ISO-8859-1')
+users_df = pd.read_csv(user_file_path, sep='::', engine='python', names=[
+                       'UserID', 'Gender', 'Age', 'Occupation', 'Zip-code', 'Username', 'Password'], encoding='ISO-8859-1')
 
 
 # Tạo pivot table từ users
@@ -61,14 +64,50 @@ def get_movie_suggestions(userId, num_suggestions=10):
     return movies_df[movies_df['MovieID'].isin(suggested_movies)].to_dict('records')
 
 
+# Hàm thực hiện kiểm tra đăng nhập
+def check_login(username, password):
+    users_df = pd.read_csv(user_file_path, sep='::', engine='python', names=[
+        'UserID', 'Gender', 'Age', 'Occupation', 'Zip-code', 'Username', 'Password'], encoding='ISO-8859-1')
+    # Kiểm tra xem username và password có tồn tại trong DataFrame users_df hay không
+    login_user = users_df[(users_df['Username'] == username)
+                          & (users_df['Password'] == password)]
+    if not login_user.empty:
+        return True  # Đăng nhập thành công
+    return False  # Đăng nhập không thành công
 
+# Hàm thực hiện kiểm tra đăng kí
+
+
+def check_register(Username, Age):
+    users_df = pd.read_csv(user_file_path, sep='::', engine='python', names=[
+        'UserID', 'Gender', 'Age', 'Occupation', 'Zip-code', 'Username', 'Password'], encoding='ISO-8859-1')
+    if users_df['Username'].isin([Username]).any():
+        return False  # Tên người dùng đã tồn tại
+    # Thực hiện kiểm tra và điều kiện khác tùy thuộc vào yêu cầu của bạn
+    if not validate_age(Age):
+        return False  # Tuổi không hợp lệ
+    return True  # Điều kiện đăng ký đúng
+
+# Kiểm tra tuổi hợp lí
+
+
+def validate_age(age):
+    try:
+        age = int(age)
+        if age < 0 or age > 150:
+            return False  # Tuổi không hợp lệ
+    except ValueError:
+        return False  # Tuổi không phải là một số nguyên
+
+    return True  # Tuổi hợp lệ
 
 # GET
 # Hàm thực hiện lấy danh sách phim
 
+
 @app.route('/', methods=['GET'])
 def init():
-     return jsonify({'message': 'Welcome to my prooject'})
+    return jsonify({'message': 'Welcome to my prooject'})
 
 
 @app.route('/api/get-moives', methods=['GET'])
@@ -80,11 +119,13 @@ def get_movies():
     return response
 
 # Hàm thực hiện trả về danh sách gợi ý theo UserID
+
+
 @app.route('/api/suggest', methods=['GET'])
 def suggest():
     response = jsonify(get_movie_suggestions(1))
     response.headers.add('Access-Control-Allow-Origin', '*')
-    return response 
+    return response
 
 
 # Hàm thực hiện lấy danh sách phim theo userId
@@ -98,35 +139,44 @@ def get_moives_byUserId(userId):
     return response
 
 # Post
+
+
+# Hàm thực hiện nhận request và thực hiện đăng nhập
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-
-    # Xử lý logic đăng nhập
-    # ...
-
-    response = jsonify({'message': 'Đăng nhập thành công'})
+    if check_login(username, password):
+        response = jsonify({'message': 'Đăng nhập thành công !'})
+    else:
+        response = jsonify({'message': 'Đăng nhập không thành công !'})
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
 
+# Hàm thực hiện nhận request và thực hiện đăng kí
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-    email = data.get('email')
+    gender = data.get('gender')
+    age = data.get('age')
+    occupation = data.get('occupation')
+    zip_code = data.get('zip_code')
+    users_count = len(users_df)
 
     # Xử lý logic đăng ký
-    save_user_data(username, password, email)
-
-    response = jsonify({'message': 'Đăng ký thành công'})
+    if check_register(username, age):
+        add_user = f"{users_count + 1}::{gender}::{age}::{occupation}::{zip_code}::{username}::{password}"
+        with open(user_file_path, 'a') as file:
+            file.write(add_user + '\n')
+        response = jsonify({'message': 'Đăng ký thành công'})
+    else:
+        response = jsonify({'message': 'Đăng ký không thành công!'})
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
-
-
 
 
 # Put
