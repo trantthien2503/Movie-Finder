@@ -153,7 +153,7 @@ def register():
     email = data.get('email')
 
     # Xử lý logic đăng ký
-    save_user_data(username, password, email)
+    save_user_data_to_file(data)
 
     response = jsonify({'message': 'Đăng ký thành công'})
     response.headers.add('Access-Control-Allow-Origin', '*')
