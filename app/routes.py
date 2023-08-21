@@ -41,6 +41,8 @@ pivot_table = ratings_df.pivot(
 # Tính ma trận độ tương đồng cosine
 similarity_matrix = cosine_similarity(pivot_table)
 
+
+
 # Hàm gợi ý phim dựa trên userId
 def get_movie_suggestions(userId, num_suggestions=10):
     user_index = pivot_table.index.get_loc(userId)
@@ -63,6 +65,8 @@ def get_movie_suggestions(userId, num_suggestions=10):
 
     return movies_df[movies_df['MovieID'].isin(suggested_movies)].to_dict('records')
 
+
+
 # Hàm thực hiện tìm kiếm phim theo đánh giá
 def get_movie_suggestions_by_rate(userId, rate, limit):
     # Lọc các xếp hạng theo UserID và xếp hạng đạt ngưỡng rate
@@ -84,13 +88,26 @@ def get_movie_suggestions_by_rate(userId, rate, limit):
 
     return limited_movie_list
 
+
+
 # Hàm thực hiển tìm kiếm phim theo chuổi
 def search_movies_by_keyword(keyword):
     # Tìm kiếm phim theo chuỗi trong tiêu đề và thể loại
     matched_movies = movies_df[movies_df['Title'].str.contains(keyword, case=False) | movies_df['Genres'].str.contains(keyword, case=False)]
+    # Trả về danh sách phim kết quả
+    return matched_movies[['MovieID', 'Title', 'Genres']].to_dict(orient='records')
+
+
+
+# Hàm thực hiện tìm kiếm phim theo danh chuỗi đa tìm kiếm
+def search_movies_by_keywords(keywords):
+       # Tìm kiếm phim dựa trên mảng các chuỗi tìm kiếm trong tiêu đề và thể loại
+    matched_movies = movies_df[movies_df.apply(lambda row: any(keyword in row['Title'] or keyword in row['Genres'] for keyword in keywords), axis=1)]
 
     # Trả về danh sách phim kết quả
     return matched_movies[['MovieID', 'Title', 'Genres']].to_dict(orient='records')
+
+
 
 # Hàm thực hiện kiểm tra đăng nhập
 def check_login(username, password):
@@ -103,9 +120,9 @@ def check_login(username, password):
         return True  # Đăng nhập thành công
     return False  # Đăng nhập không thành công
 
+
+
 # Hàm thực hiện kiểm tra đăng kí
-
-
 def check_register(Username, Age):
     users_df = pd.read_csv(user_file_path, sep='::', engine='python', names=[
         'UserID', 'Gender', 'Age', 'Occupation', 'Zip-code', 'Username', 'Password'], encoding='ISO-8859-1')
@@ -116,9 +133,9 @@ def check_register(Username, Age):
         return False  # Tuổi không hợp lệ
     return True  # Điều kiện đăng ký đúng
 
+
+
 # Kiểm tra tuổi hợp lí
-
-
 def validate_age(age):
     try:
         age = int(age)
@@ -221,6 +238,17 @@ def search():
     response = jsonify(search_movies_by_keyword( keyWord))
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
+
+# Hàm thực hiện lấy danh sách phim dựa trên kết quả đã tìm kiếm
+@ app.route('/api/search-history-keywords', methods=['POST'])
+def get_search_history_keywords():
+    data = request.get_json()
+    userId = data.get('userId')
+    filtered_keywords = historys_df[historys_df['UserID'] == userId]['keyWord'].tolist()
+    response = jsonify(search_movies_by_keywords( filtered_keywords))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
 
 # Put
 
