@@ -2,10 +2,8 @@ from app import app
 from flask import Flask, jsonify, request
 import pandas as pd
 import os
-import json
 from sklearn.metrics.pairwise import cosine_similarity
-import random
-import string
+import numpy as np
 # Lấy đường dẫn tới thư mục chứa file hiện tại
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -31,7 +29,11 @@ user_file_path = os.path.join(current_dir, 'data', 'users.dat')
 users_df = pd.read_csv(user_file_path, sep='::', engine='python', names=[
                        'UserID', 'Gender', 'Age', 'Occupation', 'Zip-code', 'Username', 'Password'], encoding='ISO-8859-1')
 
+# Danh sách lịch sử tìm kiếm
+historySearch_file_path = os.path.join(current_dir, 'data', 'historySearch.dat')
 
+historys_df = pd.read_csv(historySearch_file_path, sep='::', engine='python', names=[
+                       'UserID', 'keyWord'], encoding='ISO-8859-1')
 # Tạo pivot table từ users
 pivot_table = ratings_df.pivot(
     index='UserID', columns='MovieID', values='Rating').fillna(0)
@@ -40,8 +42,6 @@ pivot_table = ratings_df.pivot(
 similarity_matrix = cosine_similarity(pivot_table)
 
 # Hàm gợi ý phim dựa trên userId
-
-
 def get_movie_suggestions(userId, num_suggestions=10):
     user_index = pivot_table.index.get_loc(userId)
 
@@ -63,6 +63,34 @@ def get_movie_suggestions(userId, num_suggestions=10):
 
     return movies_df[movies_df['MovieID'].isin(suggested_movies)].to_dict('records')
 
+# Hàm thực hiện tìm kiếm phim theo đánh giá
+def get_movie_suggestions_by_rate(userId, rate, limit):
+    # Lọc các xếp hạng theo UserID và xếp hạng đạt ngưỡng rate
+    user_ratings = ratings_df[(ratings_df['UserID'] == userId) & (
+        ratings_df['Rating'] >= rate)]
+
+    # Liệt kê các ID phim đã được xếp hạng bởi UserID
+    movie_ids = user_ratings['MovieID'].unique()
+
+    # Lấy thông tin phim dựa trên ID phim
+    movies_by_rate = movies_df[movies_df['MovieID'].isin(movie_ids)]
+
+    # Trích xuất thông tin cần thiết (ID phim, tiêu đề và thể loại)
+    movie_list = movies_by_rate[['MovieID', 'Title', 'Genres']].to_dict(
+        orient='records')
+
+    # Giới hạn số lượng phim
+    limited_movie_list = movie_list[:limit]
+
+    return limited_movie_list
+
+# Hàm thực hiển tìm kiếm phim theo chuổi
+def search_movies_by_keyword(keyword):
+    # Tìm kiếm phim theo chuỗi trong tiêu đề và thể loại
+    matched_movies = movies_df[movies_df['Title'].str.contains(keyword, case=False) | movies_df['Genres'].str.contains(keyword, case=False)]
+
+    # Trả về danh sách phim kết quả
+    return matched_movies[['MovieID', 'Title', 'Genres']].to_dict(orient='records')
 
 # Hàm thực hiện kiểm tra đăng nhập
 def check_login(username, password):
@@ -101,16 +129,16 @@ def validate_age(age):
 
     return True  # Tuổi hợp lệ
 
+
 # GET
-# Hàm thực hiện lấy danh sách phim
-
-
-@app.route('/', methods=['GET'])
+@ app.route('/', methods=['GET'])
 def init():
     return jsonify({'message': 'Welcome to my prooject'})
 
+# Hàm thực hiện lấy danh sách phim
 
-@app.route('/api/get-moives', methods=['GET'])
+
+@ app.route('/api/get-moives', methods=['GET'])
 def get_movies():
     # Chuyển đổi DataFrame thành định dạng JSON
     movies_json = movies_df.to_json(orient='records')
@@ -118,18 +146,9 @@ def get_movies():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
-# Hàm thực hiện trả về danh sách gợi ý theo UserID
-
-
-@app.route('/api/suggest', methods=['GET'])
-def suggest():
-    response = jsonify(get_movie_suggestions(1))
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
-
 
 # Hàm thực hiện lấy danh sách phim theo userId
-@app.route('/api/get-movies-byuserid/<int:userId>', methods=['GET'])
+@ app.route('/api/get-movies-byuserid/<int:userId>', methods=['GET'])
 def get_moives_byUserId(userId):
    # Lấy danh sách phim theo userId
     suggested_movies = get_movie_suggestions(userId)
@@ -138,11 +157,11 @@ def get_moives_byUserId(userId):
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
-# Post
-
-
+# POST
 # Hàm thực hiện nhận request và thực hiện đăng nhập
-@app.route('/api/login', methods=['POST'])
+
+
+@ app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
     username = data.get('username')
@@ -156,7 +175,7 @@ def login():
 
 
 # Hàm thực hiện nhận request và thực hiện đăng kí
-@app.route('/api/register', methods=['POST'])
+@ app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
     username = data.get('username')
@@ -178,12 +197,36 @@ def register():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+# Hàm thực hiện trả về danh sách gợi ý theo Đánh giá UserID và Rating
+@ app.route('/api/suggest-rate', methods=['POST'])
+def suggestRate():
+    data = request.get_json()
+    userId = data.get('userId')
+    rate = data.get('rate')  # rate đánh giá 1-5
+    limit = int(data.get('limit'))  # limit giới hạn danh sách phim
+    response = jsonify(get_movie_suggestions_by_rate(userId, rate, limit))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
+
+# Hàm thực hiện trả về danh sách phim theo chuỗi tìm kiếm
+@ app.route('/api/search', methods=['POST'])
+def search():
+    data = request.get_json()
+    userId = data.get('userId')
+    keyWord = data.get('keyWord')  # keyWord: chuỗi tìm kiếm
+    history_search = f"{userId}::{keyWord}" # Ghi vào file lịch sử tìm kiếm
+    with open(historySearch_file_path, 'a') as file:
+        file.write(history_search + '\n')
+    response = jsonify(search_movies_by_keyword( keyWord))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 # Put
 
 
 # Delete
-@app.route('/api/datadelete/<id>', methods=['DELETE'])
+@ app.route('/api/datadelete/<id>', methods=['DELETE'])
 def delete_data(id):
     # Xóa tài nguyên có id tương ứng trong cơ sở dữ liệu hoặc xử lý theo nhu cầu
     # ...
