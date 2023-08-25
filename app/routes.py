@@ -4,6 +4,8 @@ import pandas as pd
 import os
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+import json
+
 # Lấy đường dẫn tới thư mục chứa file hiện tại
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -195,9 +197,17 @@ def login():
     username = data.get('username')
     password = data.get('password')
     if check_login(username, password):
-        response = jsonify({'message': 'Đăng nhập thành công !'})
+        user = users_df[(users_df['Username'] == username) &
+                        (users_df['Password'] == password)]
+        user_dict = user.iloc[0].to_dict()
+        response = jsonify(
+            {'message': 'Đăng nhập thành công !',
+             'result': True,
+             'user': user_dict
+             })
     else:
-        response = jsonify({'message': 'Đăng nhập không thành công !'})
+        response = jsonify(
+            {'message': 'Đăng nhập không thành công !', 'result': False})
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
@@ -206,6 +216,9 @@ def login():
 @ app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
+    # Đọc file users.dat
+    users_df = pd.read_csv(user_file_path, sep='::', engine='python', names=[
+        'UserID', 'Gender', 'Age', 'Occupation', 'Zip-code', 'Username', 'Password'], encoding='ISO-8859-1')
     username = data.get('username')
     password = data.get('password')
     gender = data.get('gender')
@@ -218,10 +231,15 @@ def register():
     if check_register(username, age):
         add_user = f"{users_count + 1}::{gender}::{age}::{occupation}::{zip_code}::{username}::{password}"
         with open(user_file_path, 'a') as file:
-            file.write(add_user + '\n')
-        response = jsonify({'message': 'Đăng ký thành công'})
+            file.write('\n' + add_user + '\n')
+        response = jsonify({
+            'message': 'Đăng ký thành công !',
+            'result': True,
+            'userId': users_count + 1
+        })
     else:
-        response = jsonify({'message': 'Đăng ký không thành công!'})
+        response = jsonify(
+            {'message': 'Đăng ký không thành công !', 'result': False})
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
@@ -265,6 +283,8 @@ def get_search_history_keywords():
     return response
 
 # Hàm thực hiện lấy danh sách users
+
+
 @ app.route('/api/users', methods=['POST'])
 def get_users():
     data = request.get_json()
